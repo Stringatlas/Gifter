@@ -11,7 +11,6 @@
 </script>
 <canvas id="mainScene" bind:this={sceneCanvas}></canvas>
 
-
 <style>
     #mainScene {
         background-color: rgb(179, 5, 5);
