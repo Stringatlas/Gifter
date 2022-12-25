@@ -1,44 +1,120 @@
 import * as Three from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Mesh } from 'three';
+import { Mesh, Object3D, Vector3 } from 'three';
+import { browser } from '$app/environment';
 
-const snowScatterBoxSize = 200;
-const numberOfSnow = 250;
-const snowStartingHeight = 100;
-const groundHeight = -5;
+// import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/17/Stats.js'
 
 const loader = new GLTFLoader();
+const snowScatterBoxSize = 200;
+const numberOfSnow = 300;
+const snowStartingHeight = 50;
+const groundHeight = -5;
 
-// class Scene {
-//     clock: Three.Clock;
-//     camera: Three.PerspectiveCamera;
-//     renderer: Three.WebGLRenderer;
-//     scene: Three.Scene;
 
-//     constructor(canvas: HTMLCanvasElement) {
-        
-//     }
+interface LoadModel {
+    path: string,
+    instances: number,
+    positions: Array<Vector3>,
+    scale: Array<Vector3>,
+    rotation?: Array<Vector3>,
+}
 
-//     init () {
+function* generateRandomPosition(count: number, xSpread: number, zSpread: number) {
+    for (let i=0; i < count; i++) {
+        yield new Vector3(Three.MathUtils.randFloatSpread(xSpread), 0, Three.MathUtils.randFloatSpread(zSpread));
+    }
+}
 
-//     }
-// }
-// async function loadModel(path: string) {
-//     loader.loadAsync(path, (gltf) => {
-//         return gltf;
-//     });
+function *generateRandomScale(count: number, xMax: number, xMin: number, yMax: number, yMin: number, zMin: number, zMax: number){
+    for (let i=0; i < count; i++) {
+        yield new Vector3(Three.MathUtils.randFloat(xMin, xMax), Three.MathUtils.randFloat(yMin, yMax), Three.MathUtils.randFloat(zMin, zMax));
+    } 
+}
 
-// }
+const numTrees = 75;
+
+const treeGenerator = generateRandomPosition(numTrees, 125, 75);
+const treeScaleGenerator = generateRandomScale(numTrees, 1, 1.2, 1, 1.5, 1, 1.2);
+
+const needLoadModels: Array<LoadModel> = [
+    {
+        path: "/snowy_christmas_tree.glb",
+        instances: numTrees,
+        positions: [new Vector3(-14, 0, -56), ...treeGenerator],
+        scale: [...treeScaleGenerator],
+        rotation: undefined,
+    },
+    {
+        path: "/christmas_tree.glb",
+        instances: 1,
+        positions: [new Vector3(browser ? window.innerWidth * 0.003 : 0, 0, -50)],
+        scale: [new Vector3(0.04, 0.04, 0.04)],
+        rotation: [new Vector3(0, Math.PI + 0.3, 0)]
+    },
+    {
+        path: "/less.glb",
+        instances: 1, 
+        positions: [new Vector3(-20, 0, -30)],
+        scale: [new Vector3(2, 2, 2)],
+        rotation: [new Vector3(0, Math.PI / -6, 0)]
+    }
+]
+
+console.log("RANDOM POSITIONS", needLoadModels[0].positions)
+const loadedModels: Array<Object3D> = new Array<Object3D>();
+
+async function loadModels(scene: Three.Scene) {
+    for (const model of needLoadModels) {
+        loader.loadAsync(model.path).then(gltf => {
+            const loadedModel = gltf.scene;
+            const positions = model.positions;
+
+            for (let i=0; i < model.instances; i++) {
+                const copyModel = loadedModel.clone();
+
+                if (model.rotation) {
+                    copyModel.setRotationFromEuler(new Three.Euler(model.rotation[0].x, model.rotation[0].y, model.rotation[0].z, "XYZ"));
+                }
+                else {
+                    copyModel.rotateY(Three.MathUtils.randFloatSpread(Math.PI/2));
+                }
+
+                console.log(positions[i]);
+                copyModel.position.set(positions[i].x, positions[i].y, positions[i].z);
+                copyModel.scale.set(model.scale[i].x, model.scale[i].y, model.scale[i].z);
+                scene.add(copyModel);
+                loadedModels.push(copyModel);
+            }
+        })
+    }
+}
+
 function createSnow(scene: Three.Scene) {
-    const [x, z] = Array(2).fill(0).map(() => Three.MathUtils.randFloatSpread(snowScatterBoxSize));
-    const y = Three.MathUtils.randFloat(groundHeight, snowStartingHeight);
+    let x, y, z;
+    if (Math.random() < 0.5) {
+        x = Three.MathUtils.randFloatSpread(snowScatterBoxSize);
+        z = Three.MathUtils.randFloat(-snowScatterBoxSize + 110, snowScatterBoxSize-30);
+        y = Three.MathUtils.randFloat(groundHeight, snowStartingHeight);
+    }
+    else {
+        x = Three.MathUtils.randFloatSpread(snowScatterBoxSize-100);
+        z = Three.MathUtils.randFloat(-snowScatterBoxSize + 100, snowScatterBoxSize-150);
+        y = Three.MathUtils.randFloat(groundHeight, snowStartingHeight);
+    }
+
 
     console.log(x, y, z);
-    
-    const geo = new Three.SphereGeometry(0.5, 25, 25);
+
+    const geo = new Three.SphereGeometry(0.3, 3, 3);
     const mat = new Three.MeshStandardMaterial( {emissive: 0xffffff, color: 0xffffff, emissiveIntensity: 1});
-  
+    // const material = new Three.PointsMaterial({
+    //     color: 0xffffff,
+    //     opacity: 1,
+    //     depthTest: false,
+    //     size: 4,
+    // })
     const snowflake = new Three.Mesh(geo, mat);
     snowflake.position.set(x, y, z);
     scene.add(snowflake);
@@ -46,33 +122,40 @@ function createSnow(scene: Three.Scene) {
     return snowflake;
 }
 
-export function createScene(canvas: HTMLCanvasElement) {
+export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivElement) {
     const clock = new Three.Clock();
 
     const scene = new Three.Scene();
-    const camera = new Three.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 1000);
-    const renderer = new Three.WebGLRenderer({ canvas: canvas, antialias: true});
-    renderer.setSize(canvas.width, canvas.height);
+    const camera = new Three.PerspectiveCamera(40, canvasDiv.clientWidth / canvasDiv.clientHeight, 0.1, 1000);
 
-    const light = new Three.AmbientLight(0xffffff, 0.2);
-    const directionalLight = new Three.DirectionalLight(0xffffff, 1);
+    camera.position.set(-7.479148750844475, 7.096112336518934, -86.97987646412219);
+    camera.rotation.set(-3.0712172829862143, 0.0047898017225396355, 3.1412550132263717, "XYZ")
+
+    const renderer = new Three.WebGLRenderer({ canvas: canvas, antialias: true});
+    renderer.setSize(canvasDiv.clientWidth, canvasDiv.clientHeight);
+
+    const light = new Three.AmbientLight(0xffffff, 0.4);
+    const directionalLight = new Three.DirectionalLight(0xB8DCE6, 0.5);
+    directionalLight.castShadow = true;
     directionalLight.position.set(10, 25, 25);
-    scene.fog = new Three.FogExp2(0x93CDE4, 0.025);
+    scene.fog = new Three.Fog(0x829FC0, 15, 130);
     scene.add(directionalLight);
     scene.add(light);
 
-    scene.background = new Three.Color(0x628AFF);
 
-    const controls = new OrbitControls(camera, canvas);
+    scene.background = new Three.Color(0x829FC0);
 
+    // const controls = new OrbitControls(camera, canvas);
 
-    camera.position.z = -snowScatterBoxSize / 2;
-    camera.position.y = 10;
+    loadModels(scene);
+    
+
     
 
     resize();
     const snow = Array(numberOfSnow).fill(0).map(() => createSnow(scene));
 
+    
     const groundGeo = new Three.PlaneGeometry(snowScatterBoxSize + 150, snowScatterBoxSize);
     const groundMat = new Three.MeshToonMaterial({
         color: 0xffffff
@@ -83,26 +166,46 @@ export function createScene(canvas: HTMLCanvasElement) {
 
     const animate = () => {
         const deltaTime = clock.getDelta();
-        console.log(1 / deltaTime);
+
+        console.log("Scene polycount:", renderer.info.render.triangles)
+        console.log("Active Drawcalls:", renderer.info.render.calls)
+        console.log("Textures in Memory", renderer.info.memory.textures)
+        console.log("Geometries in Memory", renderer.info.memory.geometries)
+        console.log("fps", 1/ deltaTime)
+        console.log("---------------")
 
         snow.forEach(s => {
             s.position.y -= deltaTime * 10;
             if (s.position.y < groundHeight) {
-                s.position.y = snowStartingHeight;
-            }
+                let x, z;
+                if (Math.random() < 0.5) {
+                    x = Three.MathUtils.randFloatSpread(snowScatterBoxSize);
+                    z = Three.MathUtils.randFloat(-snowScatterBoxSize + 110, snowScatterBoxSize-30);
+                }
+                else {
+                    x = Three.MathUtils.randFloatSpread(snowScatterBoxSize-100);
+                    z = Three.MathUtils.randFloat(-snowScatterBoxSize + 100, snowScatterBoxSize-150);
+                }
+                s.position.set(x, snowStartingHeight, z);
+            }   
         });
 
-        controls.update();
+        if (canvas.height !== canvas.clientHeight || canvas.width !== canvas.clientWidth) {
+            resize();
+        }
+
+        // controls.update();
         renderer.render(scene, camera);
+        console.log(camera.position, camera.rotation)
         requestAnimationFrame(animate);
     };
     
     animate();
 
     function resize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.aspect = canvasDiv.clientWidth / canvasDiv.clientHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(canvasDiv.clientWidth, canvasDiv.clientHeight);
     }
 
     window.addEventListener('resize', resize);
