@@ -10,8 +10,7 @@ const loader = new GLTFLoader();
 const snowScatterBoxSize = 200;
 const numberOfSnow = 300;
 const snowStartingHeight = 50;
-const groundHeight = -5;
-
+const groundHeight = -1;
 
 interface LoadModel {
     path: string,
@@ -145,12 +144,19 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
 
     scene.background = new Three.Color(0x829FC0);
 
-    // const controls = new OrbitControls(camera, canvas);
+    const controls = new OrbitControls(camera, canvas);
 
     loadModels(scene);
     
+    const areaLight = new Three.SpotLight(0xD9CD5F, 1, 50, Math.PI / 6, 0.5);
+    areaLight.target.position.x = browser ? window.innerWidth * 0.003 : 0;
+    areaLight.target.position.y = 0;
+    areaLight.target.position.z = -50;
 
-    
+    areaLight.position.set(browser ? window.innerWidth * 0.003 : 0, 25, -50);
+    scene.add(areaLight);
+    const spotlighthelper = new Three.SpotLightHelper(areaLight);
+
 
     resize();
     const snow = Array(numberOfSnow).fill(0).map(() => createSnow(scene));
@@ -175,7 +181,7 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
         console.log("---------------")
 
         snow.forEach(s => {
-            s.position.y -= deltaTime * 10;
+            s.position.y -= 0.3;
             if (s.position.y < groundHeight) {
                 let x, z;
                 if (Math.random() < 0.5) {
@@ -194,9 +200,8 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
             resize();
         }
 
-        // controls.update();
+        controls.update();
         renderer.render(scene, camera);
-        console.log(camera.position, camera.rotation)
         requestAnimationFrame(animate);
     };
     
