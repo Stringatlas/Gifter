@@ -1,8 +1,11 @@
 import * as Three from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Mesh, Object3D, Vector3 } from 'three';
+import { Mesh, Object3D, Scene, Vector3 } from 'three';
 import { browser } from '$app/environment';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
 // import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/17/Stats.js'
 
@@ -11,6 +14,10 @@ const snowScatterBoxSize = 200;
 const numberOfSnow = 300;
 const snowStartingHeight = 50;
 const groundHeight = -1;
+const scene = new Three.Scene();
+let camera: Three.PerspectiveCamera;
+let canvasDiva: HTMLDivElement;
+let outlinePass: OutlinePass;
 
 interface LoadModel {
     path: string,
@@ -119,9 +126,8 @@ function createSnow(scene: Three.Scene) {
 export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivElement) {
     const clock = new Three.Clock();
 
-    const scene = new Three.Scene();
-    const camera = new Three.PerspectiveCamera(40, canvasDiv.clientWidth / canvasDiv.clientHeight, 0.1, 1000);
-
+    camera = new Three.PerspectiveCamera(40, canvasDiv.clientWidth / canvasDiv.clientHeight, 0.1, 1000);
+    canvasDiva = canvasDiv;
     camera.position.set(-7.479148750844475, 7.096112336518934, -86.97987646412219);
     camera.rotation.set(-3.0712172829862143, 0.0047898017225396355, 3.1412550132263717, "XYZ")
 
@@ -136,10 +142,16 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
     scene.add(directionalLight);
     scene.add(light);
 
+    const composer = new EffectComposer(renderer);
 
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    outlinePass = new OutlinePass(new Three.Vector2(canvasDiva.clientWidth, canvasDiva.clientWidth), scene, camera); 
     scene.background = new Three.Color(0x829FC0);
+    composer.addPass(outlinePass);
 
-    const controls = new OrbitControls(camera, canvas);
+    // const controls = new OrbitControls(camera, canvas);
     loadModels(scene);
     
     const areaLight = new Three.SpotLight(0xD9CD5F, 1, 50, Math.PI / 6, 0.5);
@@ -194,8 +206,8 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
             resize();
         }
 
-        controls.update();
-        renderer.render(scene, camera);
+        // controls.update();
+        composer.render();
         requestAnimationFrame(animate);
     };
     
@@ -208,4 +220,17 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
     }
 
     window.addEventListener('resize', resize);
+    spawnPresent("/smallpresent.glb");
+}
+
+export function spawnPresent(path:string) {
+    loader.loadAsync(path).then((gltf) => {
+        const present = gltf.scene;
+        present.position.x = Three.MathUtils.randFloat(-5, -15);
+        present.position.y = 0.95;
+        present.position.z = Three.MathUtils.randFloat(-45, -55);
+        present.userData.outlineColor = 0xFFEE4C;
+        outlinePass.selectedObjects.push(present);
+        scene.add(present);
+    });
 }
