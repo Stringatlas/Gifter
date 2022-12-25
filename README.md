@@ -1,7 +1,7 @@
 # Gifter
 
 ## Tools Used
-- Sveletekit
+- Sveltekit
 - Typescript
 - Three.js
 
