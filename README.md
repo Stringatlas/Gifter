@@ -1,5 +1,10 @@
 # Gifter
 
+## Tools Used
+- Sveletekit
+- Typescript
+- Three.js
+
 ## Models Used
 Snow tree: https://sketchfab.com/3d-models/lowpoly-tree-christmastree-with-snow-7d8fc8dbceb246ec81580b0383852ddb
 
