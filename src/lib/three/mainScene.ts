@@ -61,7 +61,6 @@ const needLoadModels: Array<LoadModel> = [
     }
 ]
 
-console.log("RANDOM POSITIONS", needLoadModels[0].positions)
 const loadedModels: Array<Object3D> = new Array<Object3D>();
 
 async function loadModels(scene: Three.Scene) {
@@ -80,7 +79,6 @@ async function loadModels(scene: Three.Scene) {
                     copyModel.rotateY(Three.MathUtils.randFloatSpread(Math.PI/2));
                 }
 
-                console.log(positions[i]);
                 copyModel.position.set(positions[i].x, positions[i].y, positions[i].z);
                 copyModel.scale.set(model.scale[i].x, model.scale[i].y, model.scale[i].z);
                 scene.add(copyModel);
@@ -102,9 +100,6 @@ function createSnow(scene: Three.Scene) {
         z = Three.MathUtils.randFloat(-snowScatterBoxSize + 100, snowScatterBoxSize-150);
         y = Three.MathUtils.randFloat(groundHeight, snowStartingHeight);
     }
-
-
-    console.log(x, y, z);
 
     const geo = new Three.SphereGeometry(0.3, 3, 3);
     const mat = new Three.MeshStandardMaterial( {emissive: 0xffffff, color: 0xffffff, emissiveIntensity: 1});
@@ -145,7 +140,6 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
     scene.background = new Three.Color(0x829FC0);
 
     const controls = new OrbitControls(camera, canvas);
-
     loadModels(scene);
     
     const areaLight = new Three.SpotLight(0xD9CD5F, 1, 50, Math.PI / 6, 0.5);
@@ -155,7 +149,7 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
 
     areaLight.position.set(browser ? window.innerWidth * 0.003 : 0, 25, -50);
     scene.add(areaLight);
-    const spotlighthelper = new Three.SpotLightHelper(areaLight);
+    const spotlighthelper = new Three.SpotLightHelper(areaLight);   // eslint-disable-line @typescript-eslint/no-unused-vars
 
 
     resize();
@@ -171,14 +165,14 @@ export async function createScene(canvas: HTMLCanvasElement, canvasDiv: HTMLDivE
     scene.add(ground);
 
     const animate = () => {
-        const deltaTime = clock.getDelta();
+        const deltaTime = clock.getDelta();    // eslint-disable-line @typescript-eslint/no-unused-vars
 
-        console.log("Scene polycount:", renderer.info.render.triangles)
-        console.log("Active Drawcalls:", renderer.info.render.calls)
-        console.log("Textures in Memory", renderer.info.memory.textures)
-        console.log("Geometries in Memory", renderer.info.memory.geometries)
-        console.log("fps", 1/ deltaTime)
-        console.log("---------------")
+        // console.log("Scene polycount:", renderer.info.render.triangles)
+        // console.log("Active Drawcalls:", renderer.info.render.calls)
+        // console.log("Textures in Memory", renderer.info.memory.textures)
+        // console.log("Geometries in Memory", renderer.info.memory.geometries)
+        // console.log("fps", 1/ deltaTime)
+        // console.log("---------------")
 
         snow.forEach(s => {
             s.position.y -= 0.3;

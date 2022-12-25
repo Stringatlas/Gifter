@@ -54,7 +54,7 @@
     #profile-btn svg {
         width: 100%;
         height: 100%;
-        border: rgb(195, 94, 51) solid 5px;
+        border: #C24240 solid 5px;
         border-radius: 100%;
     }
 

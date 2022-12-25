@@ -1,5 +1,6 @@
 <script>
-    
+    import { onMount } from 'svelte';
+    import ModalOpener from './modalOpener.svelte';
 </script>
 
 <style>
@@ -47,6 +48,9 @@
         </svg>
         Find
     </button>
+
+    <ModalOpener />
+
 </div>
 
 
