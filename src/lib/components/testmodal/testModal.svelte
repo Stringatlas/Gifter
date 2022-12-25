@@ -3,12 +3,10 @@
         
     export function closeTestModal() {
         $isOpen = false;
-        console.log("close test", isOpen)
     }
 
     export function openTestModal() {
         $isOpen = true;
-        console.log("is open true", isOpen)
     }
 </script>
 

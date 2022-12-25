@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { Clock } from 'three';
 
-export function createGift(canvas: HTMLCanvasElement) {
+export function createGift(canvas: HTMLCanvasElement, giftPath: string) {
     const clock = new Clock();
 
     const scene = new THREE.Scene();
@@ -27,7 +27,7 @@ export function createGift(canvas: HTMLCanvasElement) {
     const controls = new OrbitControls(camera, canvas);
     controls.enableZoom = false;
     controls.enablePan = false;
-    loader.load("/present.glb", (gltf) => {
+    loader.load(giftPath, (gltf) => {
         present = gltf.scene;
         present.scale.set(0.01, 0.01, 0.01);
 
@@ -48,11 +48,10 @@ export function createGift(canvas: HTMLCanvasElement) {
         
         if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) resize();
 
-        present.rotateY(deltaTime);
+        present.rotateY(deltaTime * 0.5);
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
         controls.update();
-        console.log(camera.position)
     };
 
     const scaleIncrement = 1.5;

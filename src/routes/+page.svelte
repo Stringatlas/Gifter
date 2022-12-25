@@ -3,15 +3,14 @@
     import { onMount } from 'svelte';
     import { createScene } from '$lib/three/mainScene';
     import ToolBar from '$lib/components/toolbar.svelte';
-
+    import SendModal from '$lib/components/sendModal/modal.svelte';
     var sceneCanvas: HTMLCanvasElement;
+
     var canvasDiv: HTMLDivElement;
 
     onMount(() => {
         createScene(sceneCanvas, canvasDiv);
     });
-
-
 </script>
 
 <body>
@@ -23,6 +22,8 @@
         <ToolBar />
     </div>
 
+    <SendModal />
+    
     <div>
         <button id="profile-btn">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
